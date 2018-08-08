@@ -1,0 +1,77 @@
+<launch>
+  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch"/>
+​
+  <!--<node pkg ="my_pcl_tutorial"
+        type="uniform_fliter"
+        name="uniform_fliter"
+        args="input:=/kinect2/qhd/points"
+        output="screen">
+  </node>-->
+
+  <!--<node pkg="my_pcl_tutorial" 
+        type="hsv_pass" 
+        name="hsv_pass" 
+        args="input:=/uniform/fliter"
+        output="screen">
+  </node>-->
+
+  <node pkg="my_pcl_tutorial" 
+        type="hsv_pass" 
+        name="hsv_pass" 
+        args="input:=/kinect2/qhd/points"
+        output="screen">
+  </node>
+
+  <!--<node pkg="my_pcl_tutorial" 
+        type="statistical_remove" 
+        name="statistical_remove" 
+        args="input:=/hsv/pass"
+        output="screen">
+  </node>-->
+
+  <node pkg="my_pcl_tutorial" 
+        type="radius_pass" 
+        name="radius_pass" 
+        args="input:=/hsv/pass"
+        output="screen">
+  </node>
+
+   <node pkg="my_pcl_tutorial" 
+        type="statistical_remove" 
+        name="statistical_remove" 
+        args="input:=/radius/pass"
+        output="screen">
+  </node>
+
+  <node pkg="my_pcl_tutorial" 
+        type="voxel_grid" 
+        name="voxel_grid" 
+        args="input:=/statistical/remove"
+        output="screen">
+  </node>
+
+ 
+
+  <!--<node pkg="my_pcl_tutorial" 
+        type="camera_to_tool" 
+        name="camera_to_tool" 
+        output="screen">
+  </node>-->
+
+  <!--<node pkg="my_pcl_tutorial" 
+        type="voxel_grid" 
+        name="voxel_grid" 
+        args="input:=/radius/pass"
+        output="screen">
+  </node>-->
+
+  <node pkg="my_pcl_tutorial" 
+        type="camera_frame" 
+        name="camera_frame" 
+        output="screen">
+  </node>
+
+
+  <!--/voxel/grid-->
+​
+</launch>
