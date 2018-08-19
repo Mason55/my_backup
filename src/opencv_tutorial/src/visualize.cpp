@@ -51,7 +51,7 @@ class ImageConverter
 
   std::vector<float> array;
 
-  const int NUR_POINT = 63;//NUR_POINT=NUB_U*NUB_V
+  const int NUR_POINT = 80;//NUR_POINT=NUB_U*NUB_V
 
 public:
   ImageConverter()
@@ -131,25 +131,25 @@ public:
     // Draw an example circle on the video stream
     if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
     {
-      int NUB_U =7;//
-      int NUB_V =9;//
+      static int NUB_U =10;//
+      static int NUB_V =8;//
       cv::circle(cv_ptr->image, cv::Point(pixels[0][0], pixels[0][1]), 3, CV_RGB(255,255,255),0);//(0,0)是白点
-      cv::circle(cv_ptr->image, cv::Point(pixels[62][0], pixels[62][1]), 3, CV_RGB(0,0,0),0);//(1,1)是黑点
+      cv::circle(cv_ptr->image, cv::Point(pixels[1][0], pixels[1][1]), 3, CV_RGB(200,0,255),0);//(0,0)是白点
+      cv::circle(cv_ptr->image, cv::Point(pixels[79][0], pixels[79][1]), 3, CV_RGB(0,0,0),0);//(1,1)是黑点
       //显示NUR_POINT个点的位置，-1代表实心,2代表点的半径
       for(int i=0;i<NUR_POINT;i++)
       {
-        cv::circle(cv_ptr->image, cv::Point(pixels[i][0], pixels[i][1]), 2, CV_RGB(220,0,0),-1);//显示25个点的位置，-1代表实心,2代表点的半径
+        cv::circle(cv_ptr->image, cv::Point(pixels[i][0], pixels[i][1]), 1.5, CV_RGB(150,0,0),-1);//显示25个点的位置，-1代表实心,2代表点的半径
       }
     //这5个for循环是连接行
       {
-        int k=0;
-        for(int i=0;i<NUB_U;i++)
+        int k=0, i= 0;
+        for(i=0;i<NUB_U; i++, k += NUB_V)
         {
-              for(int j=k; j<=k+NUB_U; j++)
+              for(int j=k; j<k+NUB_V-1; j++)
               {
-                cv::line(cv_ptr->image, cv::Point(pixels[j][0], pixels[j][1]), cv::Point(pixels[j+1][0], pixels[j+1][1]), CV_RGB(255, 255, 0),0.5);
+                cv::line(cv_ptr->image, cv::Point(pixels[j][0], pixels[j][1]), cv::Point(pixels[j+1][0], pixels[j+1][1]), CV_RGB(0, 0, 150),0.5);
               }
-              k +=NUB_V;
         }
       }
 
@@ -160,7 +160,7 @@ public:
         {
             for(int j=k; j<k+(NUB_U-1)*NUB_V; j+=NUB_V)
             {
-              cv::line(cv_ptr->image, cv::Point(pixels[j][0], pixels[j][1]), cv::Point(pixels[j+NUB_V][0], pixels[j+NUB_V][1]), CV_RGB(0, 0, 255),1);
+              cv::line(cv_ptr->image, cv::Point(pixels[j][0], pixels[j][1]), cv::Point(pixels[j+NUB_V][0], pixels[j+NUB_V][1]), CV_RGB(0, 0, 200),1);
             }
               k +=1;
         }

@@ -511,6 +511,21 @@ std_srvs_generate_messages_lisp/fast:
 .PHONY : std_srvs_generate_messages_lisp/fast
 
 # Convenience name for target.
+my_pcl_tutorial/CMakeFiles/ur_final.dir/rule:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 my_pcl_tutorial/CMakeFiles/ur_final.dir/rule
+.PHONY : my_pcl_tutorial/CMakeFiles/ur_final.dir/rule
+
+# Convenience name for target.
+ur_final: my_pcl_tutorial/CMakeFiles/ur_final.dir/rule
+
+.PHONY : ur_final
+
+# fast build rule for target.
+ur_final/fast:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/ur_final.dir/build.make my_pcl_tutorial/CMakeFiles/ur_final.dir/build
+.PHONY : ur_final/fast
+
+# Convenience name for target.
 my_pcl_tutorial/CMakeFiles/nodelet_topic_tools_gencfg.dir/rule:
 	cd /home/mason/catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 my_pcl_tutorial/CMakeFiles/nodelet_topic_tools_gencfg.dir/rule
 .PHONY : my_pcl_tutorial/CMakeFiles/nodelet_topic_tools_gencfg.dir/rule
@@ -1281,6 +1296,33 @@ src/ur5_nf.cpp.s:
 	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/ur5_nf.dir/build.make my_pcl_tutorial/CMakeFiles/ur5_nf.dir/src/ur5_nf.cpp.s
 .PHONY : src/ur5_nf.cpp.s
 
+src/ur_final.o: src/ur_final.cpp.o
+
+.PHONY : src/ur_final.o
+
+# target to build an object file
+src/ur_final.cpp.o:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/ur_final.dir/build.make my_pcl_tutorial/CMakeFiles/ur_final.dir/src/ur_final.cpp.o
+.PHONY : src/ur_final.cpp.o
+
+src/ur_final.i: src/ur_final.cpp.i
+
+.PHONY : src/ur_final.i
+
+# target to preprocess a source file
+src/ur_final.cpp.i:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/ur_final.dir/build.make my_pcl_tutorial/CMakeFiles/ur_final.dir/src/ur_final.cpp.i
+.PHONY : src/ur_final.cpp.i
+
+src/ur_final.s: src/ur_final.cpp.s
+
+.PHONY : src/ur_final.s
+
+# target to generate assembly for a file
+src/ur_final.cpp.s:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/ur_final.dir/build.make my_pcl_tutorial/CMakeFiles/ur_final.dir/src/ur_final.cpp.s
+.PHONY : src/ur_final.cpp.s
+
 src/ur_fit.o: src/ur_fit.cpp.o
 
 .PHONY : src/ur_fit.o
@@ -1479,8 +1521,8 @@ help:
 	@echo "... list_install_components"
 	@echo "... install"
 	@echo "... rebuild_cache"
-	@echo "... voxel_grid"
 	@echo "... edit_cache"
+	@echo "... voxel_grid"
 	@echo "... topic_tools_generate_messages_py"
 	@echo "... topic_tools_generate_messages_lisp"
 	@echo "... topic_tools_generate_messages_nodejs"
@@ -1503,6 +1545,7 @@ help:
 	@echo "... tracking"
 	@echo "... pcl_msgs_generate_messages_eus"
 	@echo "... std_srvs_generate_messages_lisp"
+	@echo "... ur_final"
 	@echo "... nodelet_topic_tools_gencfg"
 	@echo "... ur5_nf"
 	@echo "... pcl_msgs_generate_messages_lisp"
@@ -1579,6 +1622,9 @@ help:
 	@echo "... src/ur5_nf.o"
 	@echo "... src/ur5_nf.i"
 	@echo "... src/ur5_nf.s"
+	@echo "... src/ur_final.o"
+	@echo "... src/ur_final.i"
+	@echo "... src/ur_final.s"
 	@echo "... src/ur_fit.o"
 	@echo "... src/ur_fit.i"
 	@echo "... src/ur_fit.s"

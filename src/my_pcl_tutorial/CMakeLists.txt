@@ -428,3 +428,21 @@ target_link_libraries(ur5_nf
   ${catkin_LIBRARIES}
   Kine
 )
+
+add_executable(ur_final
+  src/ur_final.cpp
+)
+add_dependencies(ur_final ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ur_final
+  ${catkin_LIBRARIES}
+  Kine
+)
+
+add_executable(ur5_final
+  src/ur5_final.cpp
+)
+add_dependencies(ur5_final ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ur5_final
+  ${catkin_LIBRARIES}
+  Kine
+)

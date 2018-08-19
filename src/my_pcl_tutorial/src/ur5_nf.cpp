@@ -21,6 +21,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <tf/transform_listener.h>
 #include <pthread.h>//线程 用于保护数据的复制
+// #include <opennurbs_nurbssurface.h>
 // #include <tf_conversions/tf/eigen.h>
 /*ROS自定义的消息类型*/
 #include "point_msgs/Point.h"
@@ -124,16 +125,16 @@ public:
     //                 0.5878  ,    0  ,   0.8090  ,    0,
     //                 0   ,    0  ,   0  ,       1;
 
-    // par2tool_mat<< 0   ,       1  ,   0  ,        0,//这个 的效果是调整出来的,还不错 rotx(32)
-    //                 0.8480   ,   0  ,  -0.5878  ,     0,
-    //                 0.5299  ,    0  ,   0.8480  ,    0,
-    //                 0   ,    0  ,   0  ,       1;
+    par2tool_mat<< 0   ,       1  ,   0  ,        0,//这个 的效果是调整出来的,还不错 rotx(32)
+                    0.8480   ,   0  ,  -0.5878  ,     0,
+                    0.5299  ,    0  ,   0.8480  ,    0,
+                    0   ,    0  ,   0  ,       1;
 
 
-  par2tool_mat<<0.0213  ,  0.9997  , -0.0156    ,     0,
-                0.8264  , -0.0264  , -0.5624    ,    0,
-                -0.5626 ,  -0.0009 ,  -0.8267   ,      0,
-                1.1210  , -0.1194  ,  1.0983    ,   1.0000;
+  // par2tool_mat<<0.0213  ,  0.9997  , -0.0156    ,     0,
+  //               0.8264  , -0.0264  , -0.5624    ,    0,
+  //               -0.5626 ,  -0.0009 ,  -0.8267   ,      0,
+  //               1.1210  , -0.1194  ,  1.0983    ,   1.0000;
 
     //  par2tool_mat<< 0.0213   ,   0.9997  ,  0.0156  ,  0,//这个 的效果是调整出来的,还不错
     //                 0.8264   ,   0  ,  -0.5624  ,  0,
@@ -170,7 +171,7 @@ public:
     printf ("    | %6.3f %6.3f %6.3f %6.3f  | \n", matrix (2, 0), matrix (2, 1), matrix (2, 2), matrix (2, 3));
     printf ("    | %6.3f %6.3f %6.3f %6.3f  | \n", matrix (3, 0), matrix (3, 1), matrix (3, 2), matrix (3, 3));
   }
- 
+
   void surFit (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)/*该函数被调用后不断的循环*/
   {
         PointCloudT::Ptr cloud (new PointCloudT);
@@ -194,8 +195,8 @@ pthread_mutex_lock(&lock);
             init_trans[5] = init_transform.getRotation().z();
             init_trans[6] = init_transform.getRotation().w();
             k_cal.quat2Dcm(init_trans, init_tool2base_mat);
-            cout<<"init_tool2base_mat:"<<endl;
-            CloudFit::print4x4Matrix(init_tool2base_mat);
+            // cout<<"init_tool2base_mat:"<<endl;
+            // CloudFit::print4x4Matrix(init_tool2base_mat);
 pthread_mutex_unlock(&lock);
 
             pcl::on_nurbs::NurbsDataSurface pca_data;//初始化pca用到的data
@@ -225,8 +226,8 @@ pthread_mutex_lock(&lock);
         tool_in_base_quan[5] = transform2.getRotation().z();
         tool_in_base_quan[6] = transform2.getRotation().w();//机械臂目标坐标系的四元数
         k_cal.quat2Dcm(tool_in_base_quan, curr_tool2base_mat);/*正运动学的齐次矩阵*/
-        cout<<"curr_tool2base_mat:"<<endl;
-        CloudFit::print4x4Matrix(curr_tool2base_mat);
+        // cout<<"curr_tool2base_mat:"<<endl;
+        // CloudFit::print4x4Matrix(curr_tool2base_mat);
       }
       catch (tf::TransformException ex)
       {
@@ -265,11 +266,13 @@ pthread_mutex_unlock(&lock);
       fit.solve ();
     }
 
-    double u=0.0;
-    double v=0.0;
-    int NUB_U =6;//设置面上的采样点
-    int NUB_V =8;
-    int i =0, j=0, k=0;
+/*************************
+******这些部分是用来采点拟合的
+//     double u=0.0;
+//     double v=0.0;
+//     int NUB_U =6;//设置面上的采样点
+//     int NUB_V =8;
+//     int i =0, j=0, k=0;
 
 //     for(i=0;i<=NUB_U;i++)//添加等于号是为了包含边界
 //     {
@@ -277,10 +280,10 @@ pthread_mutex_unlock(&lock);
 //       {
 //         my_point = fit.m_nurbs.PointAt(u,v);//u,v等间隔的取点,mypoint
 //         // my_point = nurbs.PointAt(u,v);
-//         init_paper_point[0] = my_point.x;//都是初始位置相机坐标系下的x , y, z
-//         init_paper_point[1] = my_point.y;
-//         init_paper_point[2] = my_point.z;
-//         init_paper_point[3] = 1.0;
+        init_paper_point[0] = my_point.x;//都是初始位置相机坐标系下的x , y, z
+        init_paper_point[1] = my_point.y;
+        init_paper_point[2] = my_point.z;
+        init_paper_point[3] = 1.0;
  
 // //  ROS_INFO("init_paper/n");
 // //         cout<<init_paper_point[0]<<endl;
@@ -303,6 +306,35 @@ pthread_mutex_unlock(&lock);
 //       u += (double)1/NUB_U;
 //       v=0.0;
 //     }
+*/
+  int ncp = fit.m_nurbs.m_cv_count[0] * fit.m_nurbs.m_cv_count[1];
+  ROS_INFO("ncp:%d,",ncp);
+
+int k =0;
+  for (int A = 0; A < ncp; A++,k+3)
+  {
+    // int I = CloudFit::gl2gr (A);
+    // int J = CloudFit::gl2gc (A);
+    int I = static_cast<int>(A/fit.m_nurbs.CVCount(1));
+    ROS_INFO("I:%d,",I);
+    int J = static_cast<int>(A%fit.m_nurbs.CVCount(1));
+    ROS_INFO("J:%d,",J);
+
+    ON_3dPoint cp_prev;
+    fit.m_nurbs.ON_NurbsSurface::GetCV (I, J, cp_prev);
+    init_paper_point[0] = cp_prev.x;//都是初始位置相机坐标系下的x , y, z
+    init_paper_point[1] = cp_prev.y;
+    init_paper_point[2] = cp_prev.z;
+    init_paper_point[3] = 1.0;
+    // curr_paper_point = init2curr_mat*init_paper_point;
+    // array[k]   = curr_paper_point[0];
+    // array[k+1] = curr_paper_point[1];
+    // array[k+2] = curr_paper_point[2];
+     array[k]   = init_paper_point[0];
+    array[k+1] = init_paper_point[1];
+    array[k+2] = init_paper_point[2];
+
+  }
 
     std::vector<float> array1(array,array+600);
   

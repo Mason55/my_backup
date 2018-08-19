@@ -43,7 +43,7 @@ alph = mat([math.pi/2, 0, 0, math.pi/2, -math.pi/2, 0 ])  #ur5
 
 class UrMove:
     #第一个点必须是当前点的位置
-    Q1 = [] #当前的位置
+    Q1 = [] #当前的关节角
     Q2 = [] #选出的关节角
     quat_in = [] # 目标位置的四元数
     joint_to_choose = [] #计算出来的下一组关节角
@@ -52,16 +52,6 @@ class UrMove:
     client = None
     dcm=np.zeros((4,4))
 
-    def currentJoint(self,msg):
-        if len(self.Q1)==0:
-            self.Q1.extend(msg.position)
-            print(self.Q1)
-
-    def currentQua(self,msg):
-        if len(self.quat_in)==0:
-          self.quat_in.extend(msg.data)
-                   
-
     def __init__(self):
         self.client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
         self.sub1 = rospy.Subscriber('joint_states',JointState,self.currentJoint)
@@ -69,20 +59,30 @@ class UrMove:
         print "Waiting for server..."
         self.client.wait_for_server()
         print "Connected to server"        
+        # self.dcm = self.quatToDcm(self.quat_in,self.dcm)
+        # self.joint_to_choose = self.invKine(self.dcm)
+        # self.Q2 = self.findRightJoint(self.Q1,self.joint_to_choose)
+        # self.Q2 = [0.80,0,-1.57,0,0,0]
+        # self.moveOnce() 
+        # self.quat_in=[]
+
+    def currentJoint(self,msg):
+        self.Q1=msg.position
+        # print(self.Q1)
+
+    def currentQua(self,msg):
+        self.quat_in=msg.data
+           
+    def moveOnce(self):
         self.dcm = self.quatToDcm(self.quat_in,self.dcm)
         self.joint_to_choose = self.invKine(self.dcm)
         self.Q2 = self.findRightJoint(self.Q1,self.joint_to_choose)
-        # self.Q2 = [0.80,0,-1.57,0,0,0]
-        self.move1() 
-        self.quat_in=[]
-           
-    def move1(self):
         g = FollowJointTrajectoryGoal()
         g.trajectory = JointTrajectory()
         g.trajectory.joint_names = JOINT_NAMES
         g.trajectory.points = [
             JointTrajectoryPoint(positions=self.Q1, velocities=[0]*6, time_from_start=rospy.Duration(0.0)),
-            JointTrajectoryPoint(positions=self.Q2, velocities=[0]*6, time_from_start=rospy.Duration(5))]
+            JointTrajectoryPoint(positions=self.Q2, velocities=[0]*6, time_from_start=rospy.Duration(0.01))]
         self.client.send_goal(g)
         try:
             self.client.wait_for_result()
@@ -245,6 +245,7 @@ class UrMove:
 if __name__ == '__main__':
     rospy.init_node("ur_tra_ik", anonymous=True, disable_signals=True)
     ik=UrMove()
-    rate = rospy.Rate(50)
+    rate = rospy.Rate(100)
     while not rospy.is_shutdown():
+        ik.moveOnce()
         rate.sleep()
