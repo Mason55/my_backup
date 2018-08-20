@@ -27,7 +27,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   // Perform the actual filtering
   pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
   sor.setInputCloud (cloudPtr);
-  sor.setLeafSize (0.01, 0.025, 0.1); //这个是纸片的时候的滤波效果
+  sor.setLeafSize (0.01, 0.018, 0.1); //这个是纸片的时候的滤波效果
   // sor.setLeafSize (0.015, 0.015, 0.015); //这个是纸片的时候的滤波效果
   // sor.setLeafSize (0.1, 0.1, 0.1);
   sor.filter (cloud_filtered);

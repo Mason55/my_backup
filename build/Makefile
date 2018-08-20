@@ -1752,6 +1752,19 @@ topic_tools_generate_messages_eus/fast:
 .PHONY : topic_tools_generate_messages_eus/fast
 
 #=============================================================================
+# Target rules for targets named ur5_final
+
+# Build rule for target.
+ur5_final: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 ur5_final
+.PHONY : ur5_final
+
+# fast build rule for target.
+ur5_final/fast:
+	$(MAKE) -f my_pcl_tutorial/CMakeFiles/ur5_final.dir/build.make my_pcl_tutorial/CMakeFiles/ur5_final.dir/build
+.PHONY : ur5_final/fast
+
+#=============================================================================
 # Target rules for targets named std_srvs_generate_messages_py
 
 # Build rule for target.
@@ -1945,6 +1958,19 @@ pcl_msgs_generate_messages_eus: cmake_check_build_system
 pcl_msgs_generate_messages_eus/fast:
 	$(MAKE) -f my_pcl_tutorial/CMakeFiles/pcl_msgs_generate_messages_eus.dir/build.make my_pcl_tutorial/CMakeFiles/pcl_msgs_generate_messages_eus.dir/build
 .PHONY : pcl_msgs_generate_messages_eus/fast
+
+#=============================================================================
+# Target rules for targets named pcl_ros_gencfg
+
+# Build rule for target.
+pcl_ros_gencfg: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 pcl_ros_gencfg
+.PHONY : pcl_ros_gencfg
+
+# fast build rule for target.
+pcl_ros_gencfg/fast:
+	$(MAKE) -f my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/build.make my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/build
+.PHONY : pcl_ros_gencfg/fast
 
 #=============================================================================
 # Target rules for targets named std_srvs_generate_messages_lisp
@@ -2205,19 +2231,6 @@ ur5_fit_debug: cmake_check_build_system
 ur5_fit_debug/fast:
 	$(MAKE) -f my_pcl_tutorial/CMakeFiles/ur5_fit_debug.dir/build.make my_pcl_tutorial/CMakeFiles/ur5_fit_debug.dir/build
 .PHONY : ur5_fit_debug/fast
-
-#=============================================================================
-# Target rules for targets named pcl_ros_gencfg
-
-# Build rule for target.
-pcl_ros_gencfg: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 pcl_ros_gencfg
-.PHONY : pcl_ros_gencfg
-
-# fast build rule for target.
-pcl_ros_gencfg/fast:
-	$(MAKE) -f my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/build.make my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/build
-.PHONY : pcl_ros_gencfg/fast
 
 #=============================================================================
 # Target rules for targets named ur_driver_gencfg
@@ -3004,6 +3017,7 @@ help:
 	@echo "... std_srvs_generate_messages_eus"
 	@echo "... topic_tools_generate_messages_cpp"
 	@echo "... topic_tools_generate_messages_eus"
+	@echo "... ur5_final"
 	@echo "... std_srvs_generate_messages_py"
 	@echo "... std_srvs_generate_messages_nodejs"
 	@echo "... pcl_msgs_generate_messages_nodejs"
@@ -3019,6 +3033,7 @@ help:
 	@echo "... pcl_msgs_generate_messages_py"
 	@echo "... tracking"
 	@echo "... pcl_msgs_generate_messages_eus"
+	@echo "... pcl_ros_gencfg"
 	@echo "... std_srvs_generate_messages_lisp"
 	@echo "... ur_final"
 	@echo "... nodelet_topic_tools_gencfg"
@@ -3039,7 +3054,6 @@ help:
 	@echo "... ur_fit"
 	@echo "... pca_test"
 	@echo "... ur5_fit_debug"
-	@echo "... pcl_ros_gencfg"
 	@echo "... ur_driver_gencfg"
 	@echo "... control_msgs_generate_messages_py"
 	@echo "... control_msgs_generate_messages_lisp"

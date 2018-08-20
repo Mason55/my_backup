@@ -100,6 +100,17 @@ edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
 
+# Special rule for the target test
+test:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
+	/usr/bin/ctest --force-new-ctest-process $(ARGS)
+.PHONY : test
+
+# Special rule for the target test
+test/fast: test
+
+.PHONY : test/fast
+
 # Special rule for the target install/strip
 install/strip: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
@@ -121,17 +132,6 @@ install/local: preinstall
 install/local/fast: install/local
 
 .PHONY : install/local/fast
-
-# Special rule for the target test
-test:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
-	/usr/bin/ctest --force-new-ctest-process $(ARGS)
-.PHONY : test
-
-# Special rule for the target test
-test/fast: test
-
-.PHONY : test/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -269,6 +269,21 @@ topic_tools_generate_messages_eus: my_pcl_tutorial/CMakeFiles/topic_tools_genera
 topic_tools_generate_messages_eus/fast:
 	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/topic_tools_generate_messages_eus.dir/build.make my_pcl_tutorial/CMakeFiles/topic_tools_generate_messages_eus.dir/build
 .PHONY : topic_tools_generate_messages_eus/fast
+
+# Convenience name for target.
+my_pcl_tutorial/CMakeFiles/ur5_final.dir/rule:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 my_pcl_tutorial/CMakeFiles/ur5_final.dir/rule
+.PHONY : my_pcl_tutorial/CMakeFiles/ur5_final.dir/rule
+
+# Convenience name for target.
+ur5_final: my_pcl_tutorial/CMakeFiles/ur5_final.dir/rule
+
+.PHONY : ur5_final
+
+# fast build rule for target.
+ur5_final/fast:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/ur5_final.dir/build.make my_pcl_tutorial/CMakeFiles/ur5_final.dir/build
+.PHONY : ur5_final/fast
 
 # Convenience name for target.
 my_pcl_tutorial/CMakeFiles/std_srvs_generate_messages_py.dir/rule:
@@ -494,6 +509,21 @@ pcl_msgs_generate_messages_eus: my_pcl_tutorial/CMakeFiles/pcl_msgs_generate_mes
 pcl_msgs_generate_messages_eus/fast:
 	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/pcl_msgs_generate_messages_eus.dir/build.make my_pcl_tutorial/CMakeFiles/pcl_msgs_generate_messages_eus.dir/build
 .PHONY : pcl_msgs_generate_messages_eus/fast
+
+# Convenience name for target.
+my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/rule:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/rule
+.PHONY : my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/rule
+
+# Convenience name for target.
+pcl_ros_gencfg: my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/rule
+
+.PHONY : pcl_ros_gencfg
+
+# fast build rule for target.
+pcl_ros_gencfg/fast:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/build.make my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/build
+.PHONY : pcl_ros_gencfg/fast
 
 # Convenience name for target.
 my_pcl_tutorial/CMakeFiles/std_srvs_generate_messages_lisp.dir/rule:
@@ -794,21 +824,6 @@ ur5_fit_debug: my_pcl_tutorial/CMakeFiles/ur5_fit_debug.dir/rule
 ur5_fit_debug/fast:
 	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/ur5_fit_debug.dir/build.make my_pcl_tutorial/CMakeFiles/ur5_fit_debug.dir/build
 .PHONY : ur5_fit_debug/fast
-
-# Convenience name for target.
-my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/rule:
-	cd /home/mason/catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/rule
-.PHONY : my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/rule
-
-# Convenience name for target.
-pcl_ros_gencfg: my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/rule
-
-.PHONY : pcl_ros_gencfg
-
-# fast build rule for target.
-pcl_ros_gencfg/fast:
-	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/build.make my_pcl_tutorial/CMakeFiles/pcl_ros_gencfg.dir/build
-.PHONY : pcl_ros_gencfg/fast
 
 src/Kine.o: src/Kine.cpp.o
 
@@ -1188,6 +1203,33 @@ src/uniform_fliter.cpp.s:
 	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/uniform_fliter.dir/build.make my_pcl_tutorial/CMakeFiles/uniform_fliter.dir/src/uniform_fliter.cpp.s
 .PHONY : src/uniform_fliter.cpp.s
 
+src/ur5_final.o: src/ur5_final.cpp.o
+
+.PHONY : src/ur5_final.o
+
+# target to build an object file
+src/ur5_final.cpp.o:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/ur5_final.dir/build.make my_pcl_tutorial/CMakeFiles/ur5_final.dir/src/ur5_final.cpp.o
+.PHONY : src/ur5_final.cpp.o
+
+src/ur5_final.i: src/ur5_final.cpp.i
+
+.PHONY : src/ur5_final.i
+
+# target to preprocess a source file
+src/ur5_final.cpp.i:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/ur5_final.dir/build.make my_pcl_tutorial/CMakeFiles/ur5_final.dir/src/ur5_final.cpp.i
+.PHONY : src/ur5_final.cpp.i
+
+src/ur5_final.s: src/ur5_final.cpp.s
+
+.PHONY : src/ur5_final.s
+
+# target to generate assembly for a file
+src/ur5_final.cpp.s:
+	cd /home/mason/catkin_ws/build && $(MAKE) -f my_pcl_tutorial/CMakeFiles/ur5_final.dir/build.make my_pcl_tutorial/CMakeFiles/ur5_final.dir/src/ur5_final.cpp.s
+.PHONY : src/ur5_final.cpp.s
+
 src/ur5_fit.o: src/ur5_fit.cpp.o
 
 .PHONY : src/ur5_fit.o
@@ -1529,6 +1571,7 @@ help:
 	@echo "... std_srvs_generate_messages_eus"
 	@echo "... topic_tools_generate_messages_cpp"
 	@echo "... topic_tools_generate_messages_eus"
+	@echo "... ur5_final"
 	@echo "... std_srvs_generate_messages_py"
 	@echo "... std_srvs_generate_messages_nodejs"
 	@echo "... pcl_msgs_generate_messages_nodejs"
@@ -1544,6 +1587,8 @@ help:
 	@echo "... pcl_msgs_generate_messages_py"
 	@echo "... tracking"
 	@echo "... pcl_msgs_generate_messages_eus"
+	@echo "... test"
+	@echo "... pcl_ros_gencfg"
 	@echo "... std_srvs_generate_messages_lisp"
 	@echo "... ur_final"
 	@echo "... nodelet_topic_tools_gencfg"
@@ -1566,8 +1611,6 @@ help:
 	@echo "... pca_test"
 	@echo "... ur5_fit_debug"
 	@echo "... install/local"
-	@echo "... pcl_ros_gencfg"
-	@echo "... test"
 	@echo "... src/Kine.o"
 	@echo "... src/Kine.i"
 	@echo "... src/Kine.s"
@@ -1610,6 +1653,9 @@ help:
 	@echo "... src/uniform_fliter.o"
 	@echo "... src/uniform_fliter.i"
 	@echo "... src/uniform_fliter.s"
+	@echo "... src/ur5_final.o"
+	@echo "... src/ur5_final.i"
+	@echo "... src/ur5_final.s"
 	@echo "... src/ur5_fit.o"
 	@echo "... src/ur5_fit.i"
 	@echo "... src/ur5_fit.s"

@@ -43,62 +43,52 @@ alph = mat([math.pi/2, 0, 0, math.pi/2, -math.pi/2, 0 ])  #ur5
 
 class UrMove:
     #第一个点必须是当前点的位置
-    Q1 = [] #当前的关节角
+    Q1 = [] #当前的位置
     Q2 = [] #选出的关节角
-    Q3 = [] #插值的关节角
-    quat_in = [] # 目标位置的四元数,后四位不要动
+    quat_in = [] # 目标位置的四元数
     joint_to_choose = [] #计算出来的下一组关节角
     sub1 = None
     sub2 = None
+    sub3 = None
     client = None
     dcm=np.zeros((4,4))
-
-    def __init__(self):
-        self.client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
-        self.sub1 = rospy.Subscriber('joint_states',JointState,self.currentJoint)
-        self.sub2 = rospy.Subscriber('/ur/move/tra',Point,self.currentQua)#接受一个四元数这里需要修改
-        print "Waiting for server..."
-        self.client.wait_for_server()
-        print "Connected to server"        
+    
 
     def currentJoint(self,msg):
-        self.Q1=msg.position
-        # print(self.Q1)
+        if len(self.Q1)==0:
+            self.Q1.extend(msg.position)
+            print "0" 
+            print(self.Q1)
 
     def currentQua(self,msg):
-        self.quat_in=msg.data
-
-    def cal3JiTraje(self,orig,goal,freq,time):
-        ref = goal
-        time_n = freq*time
-        if time_n <= 1:
-            ref = orig + (goal-orig)*time_n*time_n*(3.0-2*time_n);
-        return ref;
-
-           
-    def moveOnce(self):
+        if len(self.quat_in)==0:
+            print "1" 
+            self.quat_in.extend(msg.data)
         self.dcm = self.quatToDcm(self.quat_in,self.dcm)
         self.joint_to_choose = self.invKine(self.dcm)
         self.Q2 = self.findRightJoint(self.Q1,self.joint_to_choose)
+       
+    def move1(self,msg):
         g = FollowJointTrajectoryGoal()
         g.trajectory = JointTrajectory()
         g.trajectory.joint_names = JOINT_NAMES
-        # d=2#总时间
-        # freq = 0.02#50Hz
-        # time = freq*d
-        # for i in range(0,6):
-        #     self.Q2[i] = self.cal3JiTraje(self.Q1[i],self.Q2[i],freq,d)
-
         g.trajectory.points = [
             JointTrajectoryPoint(positions=self.Q1, velocities=[0]*6, time_from_start=rospy.Duration(0.0)),
-            JointTrajectoryPoint(positions=self.Q2, velocities=[0]*6, time_from_start=rospy.Duration(0.01))]
+            JointTrajectoryPoint(positions=self.Q2, velocities=[0]*6, time_from_start=rospy.Duration(2.0)) ]
         self.client.send_goal(g)
         try:
             self.client.wait_for_result()
         except KeyboardInterrupt:
             self.client.cancel_goal()
             raise
+        self.quat_in=[]
 
+    def __init__(self):
+        self.client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
+        self.sub1 = rospy.Subscriber('joint_states',JointState,self.currentJoint)
+        self.sub2 = rospy.Subscriber('/ur/move/tra',Point,self.currentQua)#接受一个四元数这里需要修改
+        # self.sub3 = rospy.Subscriber('joint_states',JointState,self.move1)
+      
 # ************************************************** FORWARD KINEMATICS
 
     def AH(self, n,th,c  ):
@@ -248,13 +238,8 @@ class UrMove:
       dcm[3,3] = 1.0
       return dcm
 
-   
-
 
 if __name__ == '__main__':
     rospy.init_node("ur_tra_ik", anonymous=True, disable_signals=True)
     ik=UrMove()
-    rate = rospy.Rate(100)
-    while not rospy.is_shutdown():
-        ik.moveOnce()
-        rate.sleep()
+    rospy.spin()
