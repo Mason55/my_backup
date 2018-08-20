@@ -44,7 +44,7 @@ alph = mat([math.pi/2, 0, 0, math.pi/2, -math.pi/2, 0 ])  #ur5
 class UrMove:
     #第一个点必须是当前点的位置
     Q1 = [] #当前的关节角
-    Q2 = [] #选出的关节角
+    Q2 = [] #目标的关节角
     Q3 = [] #插值的关节角
     quat_in = [] # 目标位置的四元数,后四位不要动
     joint_to_choose = [] #计算出来的下一组关节角
@@ -83,15 +83,18 @@ class UrMove:
         g = FollowJointTrajectoryGoal()
         g.trajectory = JointTrajectory()
         g.trajectory.joint_names = JOINT_NAMES
-        # d=2#总时间
-        # freq = 0.02#50Hz
-        # time = freq*d
-        # for i in range(0,6):
-        #     self.Q2[i] = self.cal3JiTraje(self.Q1[i],self.Q2[i],freq,d)
+
+        Q3= []
+
+        d=500#总时间
+        freq = 0.02#50Hz
+        time = freq*d
+        for i in range(6):
+            self.Q3.append( self.cal3JiTraje(self.Q1[i],self.Q2[i],freq,d))
 
         g.trajectory.points = [
             JointTrajectoryPoint(positions=self.Q1, velocities=[0]*6, time_from_start=rospy.Duration(0.0)),
-            JointTrajectoryPoint(positions=self.Q2, velocities=[0]*6, time_from_start=rospy.Duration(0.01))]
+            JointTrajectoryPoint(positions=self.Q3, velocities=[0]*6, time_from_start=rospy.Duration(time))]
         self.client.send_goal(g)
         try:
             self.client.wait_for_result()
@@ -254,7 +257,7 @@ class UrMove:
 if __name__ == '__main__':
     rospy.init_node("ur_tra_ik", anonymous=True, disable_signals=True)
     ik=UrMove()
-    rate = rospy.Rate(100)
+    rate = rospy.Rate(50)
     while not rospy.is_shutdown():
         ik.moveOnce()
         rate.sleep()

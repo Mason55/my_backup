@@ -51,7 +51,7 @@ class ImageConverter
 
   std::vector<float> array;
 
-  const int NUR_POINT = 80;//NUR_POINT=NUB_U*NUB_V
+  const int NUR_POINT = 88;//NUR_POINT=NUB_U*NUB_V
 
 public:
   ImageConverter()
@@ -131,11 +131,14 @@ public:
     // Draw an example circle on the video stream
     if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
     {
-      static int NUB_U =10;//
+      static int NUB_U =11;//
       static int NUB_V =8;//
       cv::circle(cv_ptr->image, cv::Point(pixels[0][0], pixels[0][1]), 3, CV_RGB(255,255,255),0);//(0,0)是白点
-      cv::circle(cv_ptr->image, cv::Point(pixels[1][0], pixels[1][1]), 3, CV_RGB(200,0,255),0);//(0,0)是白点
-      cv::circle(cv_ptr->image, cv::Point(pixels[79][0], pixels[79][1]), 3, CV_RGB(0,0,0),0);//(1,1)是黑点
+      cv::circle(cv_ptr->image, cv::Point(pixels[1][0], pixels[1][1]), 3, CV_RGB(200,0,255),0);//(0,0.1)是白点
+      cv::circle(cv_ptr->image, cv::Point(pixels[87][0], pixels[87][1]), 3, CV_RGB(0,0,0),0);//(1,1)是黑点
+      cv::circle(cv_ptr->image, cv::Point(pixels[40][0], pixels[40][1]), 3, CV_RGB(250,0,0),0);//(1,1)是黑点
+      cv::circle(cv_ptr->image, cv::Point(pixels[47][0], pixels[47][1]), 3, CV_RGB(250,0,0),0);//(1,1)是黑点
+      
       //显示NUR_POINT个点的位置，-1代表实心,2代表点的半径
       for(int i=0;i<NUR_POINT;i++)
       {
@@ -148,11 +151,11 @@ public:
         {
               for(int j=k; j<k+NUB_V-1; j++)
               {
-                cv::line(cv_ptr->image, cv::Point(pixels[j][0], pixels[j][1]), cv::Point(pixels[j+1][0], pixels[j+1][1]), CV_RGB(0, 0, 150),0.5);
+                cv::line(cv_ptr->image, cv::Point(pixels[j][0], pixels[j][1]), cv::Point(pixels[j+1][0], pixels[j+1][1]), CV_RGB(0, 150, 150),0.5);
               }
         }
       }
-
+ 
     //这5个for循环是连接列
       {
         int k=0;

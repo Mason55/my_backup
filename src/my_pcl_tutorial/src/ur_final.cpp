@@ -250,29 +250,29 @@ pthread_mutex_unlock(&lock);
 // /*\测试目标点   
     
     /*box是最终要到达的位置*/
-    box_point.x=0.685; box_point.y=0.022; box_point.z=0.056;
+    box_point.x=0.400; box_point.y=-0.03; box_point.z=0.0835;
 
-    /*初始化两种情况,从中选出较低者作为目标*/
-    edge_point_1 = fit.m_nurbs.PointAt(0,0.5);//要根据初始化进行调整
-    edge_point_2 = fit.m_nurbs.PointAt(1,0.5);//
-    // cout<<"edge_point_1 z:"<<edge_point_1.z<<endl;
-    // cout<<"edge_point_2 z:"<<edge_point_2.z<<endl;
-    // cout<<"edge_point z:"<<edge_point.z<<endl;
-    // cout<<"~~~~~~~~"<<endl;
-    if(edge_point_1.z<edge_point_2.z)edge_point=edge_point_1;//初始化有两种情况
-    else edge_point=edge_point_2;
+    // /*初始化两种情况,从中选出较低者作为目标*/
+    // edge_point_1 = fit.m_nurbs.PointAt(0,0.5);//要根据初始化进行调整
+    // edge_point_2 = fit.m_nurbs.PointAt(1,0.5);//
+    // // cout<<"edge_point_1 z:"<<edge_point_1.z<<endl;
+    // // cout<<"edge_point_2 z:"<<edge_point_2.z<<endl;
+    // // cout<<"edge_point z:"<<edge_point.z<<endl;
+    // // cout<<"~~~~~~~~"<<endl;
+    // if(edge_point_1.z<edge_point_2.z)edge_point=edge_point_1;//初始化有两种情况
+    // else edge_point=edge_point_2;
      
-    edge_in_point[0] = edge_point.x;
-    edge_in_point[1] = edge_point.y;
-    edge_in_point[2] = edge_point.z;
-    edge_in_point[3] = 1;
-    edge_out_point = cam2base_mat*init2curr_mat*edge_in_point;
-    edge_in_base_point.x = edge_out_point[0];
-    edge_in_base_point.y = edge_out_point[1];
-    edge_in_base_point.z = edge_out_point[2];
-    cout<<"edge_in_base_point z:"<<edge_in_base_point.z<<endl;
-    cout<<"edge_in_base_point x:"<<edge_in_base_point.x<<endl;
-    cout<<"edge_in_base_point y:"<<edge_in_base_point.y<<endl;
+    // edge_in_point[0] = edge_point.x;
+    // edge_in_point[1] = edge_point.y;
+    // edge_in_point[2] = edge_point.z;
+    // edge_in_point[3] = 1;
+    // edge_out_point = cam2base_mat*init2curr_mat*edge_in_point;
+    // edge_in_base_point.x = edge_out_point[0];
+    // edge_in_base_point.y = edge_out_point[1];
+    // edge_in_base_point.z = edge_out_point[2];
+    // cout<<"edge_in_base_point z:"<<edge_in_base_point.z<<endl;
+    // cout<<"edge_in_base_point x:"<<edge_in_base_point.x<<endl;
+    // cout<<"edge_in_base_point y:"<<edge_in_base_point.y<<endl;
 
     /*在这里设定最终的期望点的位置*/
     aim_point = fit.m_nurbs.PointAt(0.5,0.5);
@@ -300,13 +300,13 @@ pthread_mutex_unlock(&lock);
     outFile.close();//关闭文件
     cout<<"---------"<<endl;
 
-    double edge_z = box_point.z - edge_in_base_point.z;//就是Z轴一共要移动的距离
+    // double edge_z = box_point.z - edge_in_base_point.z;//就是Z轴一共要移动的距离
     double aim_x = box_point.x - aim_in_base_point.x;
     double aim_y = box_point.y - aim_in_base_point.y;
     double aim_z = box_point.z - aim_in_base_point.z;
 
-    ROS_INFO("display:::");
-    cout<<"edge_z"<<edge_z<<endl;
+    ROS_INFO("display:");
+    // cout<<"edge_z"<<edge_z<<endl;
     cout<<"aim_x:"<<aim_x<<endl;
     cout<<"aim_y:"<<aim_y<<endl;
     cout<<"aim_z:"<<aim_z<<endl;
@@ -329,39 +329,19 @@ pthread_mutex_unlock(&lock);
     outFile_2.close();//关闭文件
     cout<<"---------"<<endl;
 
-    if(edge_z>0)
-    {
-        // curr_trans[2] += static_cast<double>(edge_z);
-        curr_trans[2] += static_cast<double>(0.003);
-        std::vector<float> array2(curr_trans,curr_trans+7);
-        move_output.data = array2;
-        pub2_.publish (move_output);
-
-    }else if(aim_y>0.0005)
-    {
-        curr_trans[1] += static_cast<double>(0.003);
-        std::vector<float> array2(curr_trans,curr_trans+7);
-        move_output.data = array2;
-        pub2_.publish (move_output);
-    }else if(aim_x>0.0005)
-    {
-        curr_trans[0] += static_cast<double>(0.003);
-        std::vector<float> array2(curr_trans,curr_trans+7);
-        move_output.data = array2;
-        pub2_.publish (move_output);
-    }else if(aim_z<-0.0005)
-    {
-        curr_trans[2] += static_cast<double>(0.003);
-        std::vector<float> array2(curr_trans,curr_trans+7);
-        move_output.data = array2;
-        pub2_.publish (move_output);
-    }
+    curr_trans[0] += static_cast<double>(aim_x);
+    curr_trans[1] += static_cast<double>(aim_y);
+    curr_trans[2] += static_cast<double>(aim_z);
+    std::vector<float> array2(curr_trans,curr_trans+7);
+    move_output.data = array2;
+    pub2_.publish (move_output);
+    
 //****************计算
 
 //******这些部分是用来采点拟合的
      double u=0.0;
      double v=0.0;
-     int NUB_U =9;//设置面上的采样点
+     int NUB_U =10;//设置面上的采样点
      int NUB_V =7;
      int i =0, j=0, k=0;
 
