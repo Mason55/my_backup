@@ -88,3 +88,62 @@ void Kine::quat2Dcm(float * quaternion_in, Matrix4f& dcm)
       dcm(3,3) = 1.0;
 }
 
+void Kine::eul2Quat(float * quaternion_out, Vector3f euler_ZYX)
+{
+    Vector3f c = Vector3f(cos(euler_ZYX(0)/2),cos(euler_ZYX(1)/2),cos(euler_ZYX(2)/2));
+    Vector3f s = Vector3f(sin(euler_ZYX(0)/2),sin(euler_ZYX(1)/2),sin(euler_ZYX(2)/2));
+
+    quaternion_out[0] = c(0)*c(1)*c(2)+s(0)*s(1)*s(2);
+    quaternion_out[1] = c(0)*c(1)*s(2)-s(0)*s(1)*c(2);
+    quaternion_out[2] = c(0)*s(1)*c(2)+s(0)*c(1)*s(2);
+    quaternion_out[3] = s(0)*c(1)*c(2)-c(0)*s(1)*s(2);
+}
+
+void Kine::quat2Eul(float * quaternation_in, Vector3f &euler_ZYX)
+{
+    float aSinInput = -2*(quaternation_in[1]*quaternation_in[3] - quaternation_in[0]*quaternation_in[2]);
+    if(aSinInput>1)
+        aSinInput = 1;
+    euler_ZYX(0) = atan2(2*(quaternation_in[1]*quaternation_in[2]+quaternation_in[0]*quaternation_in[3]),
+            quaternation_in[0]*quaternation_in[0]+quaternation_in[1]*quaternation_in[1] - quaternation_in[2]*quaternation_in[2] - quaternation_in[3]*quaternation_in[3]);
+    euler_ZYX(1) = asin(aSinInput);
+    euler_ZYX(2) = atan2(2*(quaternation_in[2]*quaternation_in[3]+quaternation_in[0]*quaternation_in[1]),
+            quaternation_in[0]*quaternation_in[0] - quaternation_in[1]*quaternation_in[1] - quaternation_in[2]*quaternation_in[2] + quaternation_in[3]*quaternation_in[3]);
+}
+
+void Kine::eul2Rotm(Vector3f euler_ZYX, Matrix3f& rotm)
+{
+    Vector3f c = Vector3f(cos(euler_ZYX(0)), cos(euler_ZYX(1)), cos(euler_ZYX(2)));
+    Vector3f s = Vector3f(sin(euler_ZYX(0)), sin(euler_ZYX(1)), sin(euler_ZYX(2)));
+
+    rotm(0,0) = c(1)*c(0);
+    rotm(0,1) = s(2)*s(1)*c(0) - c(2)*s(0);
+    rotm(0,2) = c(2)*s(1)*c(0) + s(2)*s(0);
+    rotm(1,0) = c(1)*s(0);
+    rotm(1,1) = s(2)*s(1)*s(0) + c(2)*c(0);
+    rotm(1,2) = c(2)*s(1)*s(0) - s(2)*c(0);
+    rotm(2,0) = -s(1);
+    rotm(2,1) = s(2)*c(1);
+    rotm(2,2) = c(2)*c(1);
+}
+
+void Kine::rotm2Eul(Vector3f& euler_ZYX, Matrix3f rotm)
+{
+    float sy = sqrt(rotm(0,0)*rotm(0,0) + rotm(1,0)*rotm(1,0));
+
+    bool singular = sy < 1e-6;
+
+    if(!singular)
+    {
+        euler_ZYX(2) = atan2(rotm(2,1), rotm(2,2));
+        euler_ZYX(1) = atan2(-rotm(2,0), sy);
+        euler_ZYX(0) = atan2(rotm(1,0), rotm(0,0));
+    }
+    else
+    {
+        euler_ZYX(2) = atan2(-rotm(1,2), rotm(1,1));
+        euler_ZYX(1) = atan2(-rotm(2,0), sy);
+        euler_ZYX(0) = 0;
+    }
+}
+

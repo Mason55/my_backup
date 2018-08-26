@@ -39,34 +39,32 @@ d = mat([0.089159, 0, 0, 0.10915, 0.09465, 0.0823]) #ur5
 a =mat([0 ,-0.425 ,-0.39225 ,0 ,0 ,0]) #ur5
 # a =mat([0 ,-0.612 ,-0.5723 ,0 ,0 ,0])#ur10 mm
 alph = mat([math.pi/2, 0, 0, math.pi/2, -math.pi/2, 0 ])  #ur5
+# global init_time = 0
 # alph = mat([pi/2, 0, 0, pi/2, -pi/2, 0 ]) # ur10
 
 class UrMove:
     #第一个点必须是当前点的位置
-    Q1 = [] #当前的关节角
+    # Q1 = [] #当前的关节角
     Q2 = [] #目标的关节角
     Q3 = [] #插值的关节角
+    quat_time_in = []#七元树加上时间(最后一位是时间)
     quat_in = [] # 目标位置的四元数,后四位不要动
     joint_to_choose = [] #计算出来的下一组关节角
     sub1 = None
-    sub2 = None
     client = None
     dcm=np.zeros((4,4))
 
     def __init__(self):
         self.client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
-        self.sub1 = rospy.Subscriber('joint_states',JointState,self.currentJoint)
-        self.sub2 = rospy.Subscriber('/ur/move/tra',Point,self.currentQua)#接受一个四元数这里需要修改
+        self.sub1 = rospy.Subscriber('/ur/move/tra',Point,self.currentQua)#接受一个四元数这里需要修改
         print "Waiting for server..."
         self.client.wait_for_server()
         print "Connected to server"        
 
-    def currentJoint(self,msg):
-        self.Q1=msg.position
-        # print(self.Q1)
-
     def currentQua(self,msg):
-        self.quat_in=msg.data
+        self.quat_time_in=msg.data
+        self.quat_in = self.quat_time_in[0:7]
+        print(self.quat_in[0],self.quat_in[1],self.quat_in[2])
 
     def cal3JiTraje(self,orig,goal,freq,time):
         ref = goal
@@ -77,30 +75,32 @@ class UrMove:
 
            
     def moveOnce(self):
+        joint_states = rospy.wait_for_message("joint_states", JointState)
+        joints_pos = joint_states.position#当前位置的6个关节角
         self.dcm = self.quatToDcm(self.quat_in,self.dcm)
         self.joint_to_choose = self.invKine(self.dcm)
-        self.Q2 = self.findRightJoint(self.Q1,self.joint_to_choose)
+        self.Q2 = self.findRightJoint(joints_pos,self.joint_to_choose)
         g = FollowJointTrajectoryGoal()
         g.trajectory = JointTrajectory()
         g.trajectory.joint_names = JOINT_NAMES
 
-        Q3= []
-
-        d=500#总时间
-        freq = 0.02#50Hz
-        time = freq*d
-        for i in range(6):
-            self.Q3.append( self.cal3JiTraje(self.Q1[i],self.Q2[i],freq,d))
-
+        d=self.quat_time_in[7]#总时间
+      
         g.trajectory.points = [
-            JointTrajectoryPoint(positions=self.Q1, velocities=[0]*6, time_from_start=rospy.Duration(0.0)),
-            JointTrajectoryPoint(positions=self.Q3, velocities=[0]*6, time_from_start=rospy.Duration(time))]
+            JointTrajectoryPoint(positions=joints_pos, velocities=[0]*6, time_from_start=rospy.Duration(0.0))
+            ]
+
+        g.trajectory.points.append(
+            JointTrajectoryPoint(positions=self.Q2, velocities=[0]*6, time_from_start=rospy.Duration(d)))
+  
         self.client.send_goal(g)
+        
         try:
             self.client.wait_for_result()
         except KeyboardInterrupt:
             self.client.cancel_goal()
             raise
+        # g.trajectory.points.clear()
 
 # ************************************************** FORWARD KINEMATICS
 

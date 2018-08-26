@@ -34,8 +34,8 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
 
   // build the condition
 //----------------------hhhhhhhhhhhhhhhhhhhhhhhh
-  int hMax = 0;
-  int hMin = -50;
+  int hMax = 10;
+  int hMin = -70;
   color_cond->addComparison (pcl::PackedHSIComparison<PointXYZRGB>::ConstPtr (new pcl::PackedHSIComparison<PointXYZRGB> ("h", pcl::ComparisonOps::LT, hMax)));
    // -128 to 127 corresponds to -pi to pi
   color_cond->addComparison (pcl::PackedHSIComparison<PointXYZRGB>::ConstPtr (new pcl::PackedHSIComparison<PointXYZRGB> ("h", pcl::ComparisonOps::GT, hMin)));
@@ -49,7 +49,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   conremo.filter (*cloud_filtered_h);
  
 //---------------------------sssssssssssssssssssss
-  int sMax = 100;//100以上也有值
+  int sMax = 250;//100以上也有值
   int sMin = 0;
   color_cond->addComparison (pcl::PackedHSIComparison<PointXYZRGB>::ConstPtr (new pcl::PackedHSIComparison<PointXYZRGB> ("s", pcl::ComparisonOps::LT, sMax)));
   color_cond->addComparison (pcl::PackedHSIComparison<PointXYZRGB>::ConstPtr (new pcl::PackedHSIComparison<PointXYZRGB> ("s", pcl::ComparisonOps::GT, sMin)));
@@ -63,7 +63,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
 
 //-----------------------------iiiiiiiiiiiiiiiiiiiii
   int iMax = 255;
-  int iMin = 150;
+  int iMin = 0;
   color_cond->addComparison (pcl::PackedHSIComparison<PointXYZRGB>::ConstPtr (new pcl::PackedHSIComparison<PointXYZRGB> ("i", pcl::ComparisonOps::LT, iMax)));
   color_cond->addComparison (pcl::PackedHSIComparison<PointXYZRGB>::ConstPtr (new pcl::PackedHSIComparison<PointXYZRGB> ("i", pcl::ComparisonOps::GT, iMin)));
   // build the filter

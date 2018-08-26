@@ -42,7 +42,8 @@ typedef pcl::PointCloud<PointT> PointCloudT;
 const int BUF_SIZE=4096;
 
 unsigned order (3);//nurbs曲面的阶数
-unsigned iterations_fit (20);//拟合的时候迭代的次数
+unsigned refinement (2);
+unsigned iterations_fit (5);//拟合的时候迭代的次数
 
 ON_NurbsSurface nurbs (3,false,order,order,order,order);//初始化的nurbs曲面
 PointCloudT::Ptr init_cam_cloud (new PointCloudT);
@@ -50,6 +51,7 @@ PointCloudT::Ptr init_tool_cloud (new PointCloudT);
 PointCloudT::Ptr curr2init_cloud (new PointCloudT);
 
 int init_flag = 1;
+int flag_2 = 0;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 class CloudFit
@@ -85,36 +87,40 @@ class CloudFit
 
   float cam2tool_quan[7];
   float tool_in_base_quan[7];//
-  float curr_trans[7];//当前的姿态点
+  float curr_trans[8];//要发布的姿态和运行时间
   float init_trans[7];//第一个姿态的7个表示位置的xyz,xyzw
   float init_trans_cam2tool[7];//第一个姿态的7个表示位置的xyz,xyzw
 
   point_msgs::Point visual_output;//可视化输出的点
-  point_msgs::Point move_output;//运动控制输出的点（暂时不考虑）
+  point_msgs::Point move_output_1;//运动控制输出的点（暂时不考虑）
+  point_msgs::Point move_output_2;
 
   float array[600];
 
  public: 
   ON_3dPoint my_point;
   Kine k_cal;//实例化一个对象，包含四元数和齐次矩阵之间的相互转化函数
-  ON_3dPoint box_point;//路径点
-  ON_3dPoint edge_point_1;//从1 和 2 中选一个点作为目标点edge_POINT
-  ON_3dPoint edge_point_2;
+  ON_3dPoint box_point_1;//路径点
+  ON_3dPoint point_0;//指定1和2来到达指定位置 1到达指定位置的上方
+  ON_3dPoint point_1;//插入纸片
+  ON_3dPoint point_2;
+  ON_3dPoint point_3;//指定1和2来到达指定位置 1到达指定位置的上方
+  ON_3dPoint point_4;//插入纸片
+  ON_3dPoint point_5;
   ON_3dPoint edge_point;//3是纸边缘的点
   ON_3dPoint edge_in_base_point;//4是基座坐标系下的点
-  ON_3dPoint aim_point;//5是目标最终点
-  ON_3dPoint aim_in_base_point;//6是目标最终点
+  ON_3dPoint aim_point_1;//5是目标最终点
+  ON_3dPoint aim_in_base_point_1;//6是目标最终点
   Vector4f edge_in_point;
   Vector4f edge_out_point;
-  Vector4f aim_in_point;
-  Vector4f aim_out_point;
+  Vector4f aim_in_point_1;
+  Vector4f aim_out_point_1;
+  ON_3dPoint aim_point_2;//5是目标最终点
+  ON_3dPoint aim_in_base_point_2;//6是目标最终点
+  Vector4f aim_in_point_2;
+  Vector4f aim_out_point_2;
   double move_quan[7];//要发布的下一个位置的四元数
-//   ON_3dPoint pub_point[4];//要发布的路径点（暂时没包含）
 
-    // ofstream outFile;
-    // /*ios::trunc表示在打开文件前将文件清空,由于是写入,文件不存在则创建*/
-    // outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/aim_point.txt",ios::trunc);
-  
 public:
   CloudFit()
   {
@@ -136,12 +142,13 @@ public:
                     0.5299  ,    0  ,   0.8480  ,    0,
                     0   ,    0  ,   0  ,       1;
 
+    // par2tool_mat<< 0   ,       1  ,   0  ,        0,//这个 的效果是调整出来的,还不错 rotx(32)
+    //             0.8480   ,   0  ,  -0.5878  ,     0,
+    //             0.5299  ,    0  ,   0.8480  ,    0,
+    //             0   ,    0  ,   0  ,       1;
+
     init_paper_point<<0.0,0.0,0.0,1.0;
     curr_paper_point<<0.0,0.0,0.0,1.0;
-
-    // ofstream outFile;
-    // /*ios::trunc表示在打开文件前将文件清空,由于是写入,文件不存在则创建*/
-    // outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/aim_point.txt");
 
     ROS_INFO("CloudFit works/n");
   };
@@ -201,10 +208,12 @@ pthread_mutex_unlock(&lock);
     
     pcl::on_nurbs::NurbsDataSurface data;//这个用于装填后续点云的数据
     pcl::on_nurbs::FittingSurface::Parameter params;//设置曲面拟合所需要的参数，使拟合效果更好
-    params.interior_smoothness = 0.2;
-    params.interior_weight = 10;
-    params.boundary_smoothness = 0.005;
-    params.boundary_weight = 0.01;
+    params.interior_smoothness = 2;
+    params.interior_weight = 1;
+    params.boundary_smoothness = 0.006;
+    params.boundary_weight = 0.5;
+    // params.interior_regularisation = 0;
+    // params.boundary_regularisation = 0;
 
     // params.interior_smoothness = 2;
     // params.interior_weight = 2;
@@ -242,51 +251,39 @@ pthread_mutex_unlock(&lock);
     for (unsigned i = 0; i < iterations_fit; ++i)//优化拟合的效果
     {
       fit.assemble (params);
-      fit.solve ();
+      fit.solve (0.46);
     }
     //再添加一下优化拟合的
 
 //************************计算点
 // /*\测试目标点   
-    
-    /*box是最终要到达的位置*/
-    box_point.x=0.400; box_point.y=-0.03; box_point.z=0.0835;
-
-    // /*初始化两种情况,从中选出较低者作为目标*/
-    // edge_point_1 = fit.m_nurbs.PointAt(0,0.5);//要根据初始化进行调整
-    // edge_point_2 = fit.m_nurbs.PointAt(1,0.5);//
-    // // cout<<"edge_point_1 z:"<<edge_point_1.z<<endl;
-    // // cout<<"edge_point_2 z:"<<edge_point_2.z<<endl;
-    // // cout<<"edge_point z:"<<edge_point.z<<endl;
-    // // cout<<"~~~~~~~~"<<endl;
-    // if(edge_point_1.z<edge_point_2.z)edge_point=edge_point_1;//初始化有两种情况
-    // else edge_point=edge_point_2;
-     
-    // edge_in_point[0] = edge_point.x;
-    // edge_in_point[1] = edge_point.y;
-    // edge_in_point[2] = edge_point.z;
-    // edge_in_point[3] = 1;
-    // edge_out_point = cam2base_mat*init2curr_mat*edge_in_point;
-    // edge_in_base_point.x = edge_out_point[0];
-    // edge_in_base_point.y = edge_out_point[1];
-    // edge_in_base_point.z = edge_out_point[2];
-    // cout<<"edge_in_base_point z:"<<edge_in_base_point.z<<endl;
-    // cout<<"edge_in_base_point x:"<<edge_in_base_point.x<<endl;
-    // cout<<"edge_in_base_point y:"<<edge_in_base_point.y<<endl;
-
+   
     /*在这里设定最终的期望点的位置*/
-    aim_point = fit.m_nurbs.PointAt(0.5,0.5);
-    aim_in_point[0] = aim_point.x;
-    aim_in_point[1] = aim_point.y;
-    aim_in_point[2] = aim_point.z;
-    aim_in_point[3] = 1;
-    aim_out_point = cam2base_mat*init2curr_mat*aim_in_point;
-    aim_in_base_point.x = aim_out_point[0];
-    aim_in_base_point.y = aim_out_point[1];
-    aim_in_base_point.z = aim_out_point[2];
-    cout<<"aim_in_base_point x:"<<aim_in_base_point.x<<endl;
-    cout<<"aim_in_base_point y:"<<aim_in_base_point.y<<endl;
-    cout<<"aim_in_base_point z:"<<aim_in_base_point.z<<endl;
+    aim_point_1 = fit.m_nurbs.PointAt(0,0.5);
+    aim_in_point_1[0] = aim_point_1.x;
+    aim_in_point_1[1] = aim_point_1.y;
+    aim_in_point_1[2] = aim_point_1.z;
+    aim_in_point_1[3] = 1;
+    aim_out_point_1 = cam2base_mat*init2curr_mat*aim_in_point_1;
+    aim_in_base_point_1.x = aim_out_point_1[0];
+    aim_in_base_point_1.y = aim_out_point_1[1];
+    aim_in_base_point_1.z = aim_out_point_1[2];
+    cout<<"aim_in_base_point_1 x:"<<aim_in_base_point_1.x<<endl;
+    cout<<"aim_in_base_point_1 y:"<<aim_in_base_point_1.y<<endl;
+    cout<<"aim_in_base_point_1 z:"<<aim_in_base_point_1.z<<endl;
+
+    aim_point_2 = fit.m_nurbs.PointAt(1,0.5);
+    aim_in_point_2[0] = aim_point_2.x;
+    aim_in_point_2[1] = aim_point_2.y;
+    aim_in_point_2[2] = aim_point_2.z;
+    aim_in_point_2[3] = 1;
+    aim_out_point_2 = cam2base_mat*init2curr_mat*aim_in_point_2;
+    aim_in_base_point_2.x = aim_out_point_2[0];
+    aim_in_base_point_2.y = aim_out_point_2[1];
+    aim_in_base_point_2.z = aim_out_point_2[2];
+    cout<<"aim_in_base_point_2 x:"<<aim_in_base_point_2.x<<endl;
+    cout<<"aim_in_base_point_2 y:"<<aim_in_base_point_2.y<<endl;
+    cout<<"aim_in_base_point_2 z:"<<aim_in_base_point_2.z<<endl;
 
     double secs = ros::Time::now().toSec();
     static double init_secs = ros::Time::now().toSec();
@@ -294,23 +291,32 @@ pthread_mutex_unlock(&lock);
 
     ofstream outFile;
     /*ios::trunc表示在打开文件前将文件清空,由于是写入,文件不存在则创建*/
-    outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/aim_point_20180820.txt",ios::app);
+    outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/aim_point_1_20180826.txt",ios::app);
     // ros::NodeHandle nh;
-    outFile<<timer<<" "<<aim_in_base_point.x<<" "<<aim_in_base_point.y<<" "<<aim_in_base_point.z<<endl;
+    outFile<<timer<<" "<<aim_in_base_point_1.x<<" "<<aim_in_base_point_1.y<<" "<<aim_in_base_point_1.z<<endl;
     outFile.close();//关闭文件
-    cout<<"---------"<<endl;
 
-    // double edge_z = box_point.z - edge_in_base_point.z;//就是Z轴一共要移动的距离
-    double aim_x = box_point.x - aim_in_base_point.x;
-    double aim_y = box_point.y - aim_in_base_point.y;
-    double aim_z = box_point.z - aim_in_base_point.z;
+    ofstream outFile;
+    /*ios::trunc表示在打开文件前将文件清空,由于是写入,文件不存在则创建*/
+    outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/aim_point_2_20180826.txt",ios::app);
+    // ros::NodeHandle nh;
+    outFile<<timer<<" "<<aim_in_base_point_2.x<<" "<<aim_in_base_point_2.y<<" "<<aim_in_base_point_2.z<<endl;
+    outFile.close();//关闭文件
+    // cout<<"---------"<<endl;
+
+    /*box是最终要到达的位置*/
+    box_point_1.x=0.5300; box_point_1.y=-0.2800; box_point_1.z=-0.032;
+
+    double aim_x = box_point_1.x - aim_in_base_point_1.x;
+    double aim_y = box_point_1.y - aim_in_base_point_1.y;
+    double aim_z = box_point_1.z - aim_in_base_point_1.z;
 
     ROS_INFO("display:");
     // cout<<"edge_z"<<edge_z<<endl;
-    cout<<"aim_x:"<<aim_x<<endl;
-    cout<<"aim_y:"<<aim_y<<endl;
-    cout<<"aim_z:"<<aim_z<<endl;
-    cout<<"---------"<<endl;
+    // cout<<"aim_x:"<<aim_x<<endl;
+    // cout<<"aim_y:"<<aim_y<<endl;
+    // cout<<"aim_z:"<<aim_z<<endl;
+    // cout<<"---------"<<endl;
    
     /*位置可以变,姿态不能变*/
     curr_trans[0]=tool_in_base_quan[0];
@@ -320,23 +326,72 @@ pthread_mutex_unlock(&lock);
     curr_trans[4]=init_trans[4];
     curr_trans[5]=init_trans[5];
     curr_trans[6]=init_trans[6];
+    curr_trans[7]=0.0;
+
+    /*初始化两种情况,从中选出较低者作为目标*/
+    point_0.x=0.4570; point_0.y=0.0675; point_0.z=0.23;//提起来
+    point_1.x=0.5358; point_1.y=-0.1030; point_1.z=0.2420;//对准了
+    point_2.x=0.5280; point_2.y=-0.3000; point_2.z=0.3240;//移动过去
+    point_3.x=0.5280; point_3.y=-0.2900; point_3.z=0.2500;//提起来
+    point_4.x=0.5280; point_4.y=-0.2590; point_4.z=0.2250;//放下去 一推
+
+    double p0_distance = abs(tool_in_base_quan[2]-point_0.z);
+    double p1_distance = abs(tool_in_base_quan[0]-point_1.x);
+    double p2_distance = abs(tool_in_base_quan[1]-point_2.y);
+    double p3_distance = abs(tool_in_base_quan[2]-point_3.z);
+    double p4_distance = abs(tool_in_base_quan[2]-point_3.z);
+
+    if(flag_2==0)
+    {
+        curr_trans[2]=point_0.z;
+        curr_trans[7]=5;
+        std::vector<float> p1_array(curr_trans,curr_trans+8);
+        move_output_1.data = p1_array;
+        if (p0_distance<0.002)flag_2=1;
+    }
+      if(flag_2==1)
+    {
+        curr_trans[0]=point_1.x;
+        curr_trans[7]=5;
+        std::vector<float> p2_array(curr_trans,curr_trans+8);
+        move_output_1.data = p2_array;
+        if (p1_distance<0.003)flag_2=2;
+    }
+      if(flag_2==2)
+    {
+        curr_trans[1]=point_2.y;
+        curr_trans[7]=12;
+        std::vector<float> p2_array(curr_trans,curr_trans+8);
+        move_output_1.data = p2_array;
+        if (p2_distance<0.003)flag_2=3;
+    }
+     if(flag_2==3)
+    {
+        curr_trans[2]=point_3.z;
+        curr_trans[7]=2;
+        std::vector<float> p2_array(curr_trans,curr_trans+8);
+        move_output_1.data = p2_array;
+        if (p3_distance<0.003)flag_2=4;
+    }
+     if(flag_2==4)
+    {
+        curr_trans[1]=point_4.y;
+        curr_trans[2]=point_4.z;
+        curr_trans[7]=2;
+        std::vector<float> p2_array(curr_trans,curr_trans+8);
+        move_output_1.data = p2_array;
+        if (p3_distance<0.003)flag_2=4;
+    }
+      cout<<"flag_2: "<<flag_2<<endl;
+      pub2_.publish (move_output_1);
 
     ofstream outFile_2;
     /*ios::trunc表示在打开文件前将文件清空,由于是写入,文件不存在则创建*/
-    outFile_2.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/arm_end_point_20180820.txt",ios::app);
+    outFile_2.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/arm_end_point_10180820.txt",ios::app);
     // ros::NodeHandle nh;
     outFile_2<<timer<<" "<<curr_trans[0]<<" "<<curr_trans[1]<<" "<<curr_trans[2]<<endl;
     outFile_2.close();//关闭文件
     cout<<"---------"<<endl;
-
-    curr_trans[0] += static_cast<double>(aim_x);
-    curr_trans[1] += static_cast<double>(aim_y);
-    curr_trans[2] += static_cast<double>(aim_z);
-    std::vector<float> array2(curr_trans,curr_trans+7);
-    move_output.data = array2;
-    pub2_.publish (move_output);
-    
-//****************计算
 
 //******这些部分是用来采点拟合的
      double u=0.0;
@@ -355,22 +410,10 @@ pthread_mutex_unlock(&lock);
                 init_paper_point[1] = my_point.y;
                 init_paper_point[2] = my_point.z;
                 init_paper_point[3] = 1.0;
-    
-    //    ROS_INFO("init_paper/n");
-    //           cout<<init_paper_point[0]<<endl;
-    //           cout<<init_paper_point[1]<<endl;
-    //           cout<<init_paper_point[2]<<endl;
-
-                //curr_paper_point = curr2init_mat*init_paper_point;转换到相机坐标系下，为了描点
                 curr_paper_point = init2curr_mat*init_paper_point;//转换到相机坐标系下，为了描点
                 array[k]   = curr_paper_point[0];
                 array[k+1] = curr_paper_point[1];
                 array[k+2] = curr_paper_point[2];
-    //   ROS_INFO("curr_paper/n");
-    //           cout<<curr_paper_point[0]<<endl;
-    //           cout<<curr_paper_point[1]<<endl;
-    //           cout<<curr_paper_point[2]<<endl;
-
                 k += 3;
                 v += (double)1/NUB_V;
         }
@@ -378,11 +421,9 @@ pthread_mutex_unlock(&lock);
         v=0.0;
      }
 
-    std::vector<float> array1(array,array+600);
-  
-    visual_output.data = array1;
+    std::vector<float> array_visual(array,array+600);
+    visual_output.data = array_visual;
     pub1_.publish (visual_output);/*发布数据点*/
-
   };
   
 };
