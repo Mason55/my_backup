@@ -65,6 +65,7 @@ public:
     image_pub_ = it_.advertise("bsfitting/opencv/video", 1);
 
     cv::namedWindow(OPENCV_WINDOW);
+    cv::resizeWindow(OPENCV_WINDOW,4096,3112);
   }
 
   ~ImageConverter()
