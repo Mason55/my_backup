@@ -257,7 +257,7 @@ class UrMove:
 if __name__ == '__main__':
     rospy.init_node("ur_tra_ik", anonymous=True, disable_signals=True)
     ik=UrMove()
-    rate = rospy.Rate(50)
+    rate = rospy.Rate(10)
     while not rospy.is_shutdown():
         ik.moveOnce()
         rate.sleep()

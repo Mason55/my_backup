@@ -1,18 +1,18 @@
-load aim_point_1_20180826.txt;
-sec = aim_point_1_20180826(:,1);
-aim_x = aim_point_1_20180826(:,2);
-aim_y = aim_point_1_20180826(:,3);
-aim_z = aim_point_1_20180826(:,4);
+load aim_point_2_20180829.txt;
+sec = aim_point_2_20180829(:,1);
+aim_x = aim_point_2_20180829(:,2);
+aim_y = aim_point_2_20180829(:,3);
+aim_z = aim_point_2_20180829(:,4);
 
-load arm_end_point_20180826.txt;
-arm_x = arm_end_point_20180826(:,2);
-arm_y = arm_end_point_20180826(:,3);
-arm_z = arm_end_point_20180826(:,4);
+load arm_end_point_20180829.txt;
+arm_x = arm_end_point_20180829(:,2);
+arm_y = arm_end_point_20180829(:,3);
+arm_z = arm_end_point_20180829(:,4);
 
 box_x=0.6032*exp(sec-sec);
 box_y=-0.1754*exp(sec-sec);
-box_z=-0.032*exp(sec-sec);
-figure(1);
+box_z=-0.04*exp(sec-sec);
+figure(2);
 subplot(2,2,1);
 plot(sec, arm_x,'-b',sec, aim_x,'-r',sec,box_x,'g');
 

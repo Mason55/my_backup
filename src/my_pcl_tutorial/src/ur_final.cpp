@@ -119,6 +119,7 @@ class CloudFit
   ON_3dPoint aim_point_2;//5是目标最终点
   ON_3dPoint aim_in_base_point_2;//
   ON_3dPoint aim_in_base_point_3;//1和2中选一个base_y比较小的
+  ON_3dPoint aim_in_base_point_4;//1和2中选一个base_y比较小的
   Vector4f aim_in_point_2;
   Vector4f aim_out_point_2;
   double move_quan[7];//要发布的下一个位置的四元数
@@ -174,8 +175,20 @@ public:
     printf ("    | %6.3f %6.3f %6.3f %6.3f  | \n", matrix (3, 0), matrix (3, 1), matrix (3, 2), matrix (3, 3));
   }
 
+  // 3 次関数による軌道補間
+  double calc3JiTraje(double orig, double goal, double freq, double curr_time)//freq是总时间分之一
+{
+    double ref = goal;
+    double time_n = freq*curr_time;
+
+    if(time_n <= 1)
+        ref = orig + (goal-orig)*time_n*time_n*(3.0-2*time_n);
+    return ref;
+}
+
   void surFit (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)/*该函数被调用后不断的循环*/
   {
+//////////////////隐藏专用
         PointCloudT::Ptr cloud (new PointCloudT);
         PointCloudT::Ptr curr_tool_cloud (new PointCloudT);
         pcl::fromROSMsg (*cloud_msg, *cloud);
@@ -183,7 +196,7 @@ public:
 
         if(cloud->size()>=cloud_size &&init_flag==1) //确保有足够的数据点，只进入该函数一次
         {
-pthread_mutex_lock(&lock);
+            pthread_mutex_lock(&lock);
             pcl::copyPointCloud(*cloud/*in*/, *init_cam_cloud/*out*/);
             // pthread_mutex_unlock(&lock);
             // // pthread_mutex_lock(&lock);
@@ -199,7 +212,7 @@ pthread_mutex_lock(&lock);
             k_cal.quat2Dcm(init_trans, init_tool2base_mat);
             // cout<<"init_tool2base_mat:"<<endl;
             // CloudFit::print4x4Matrix(init_tool2base_mat);
-pthread_mutex_unlock(&lock);
+            pthread_mutex_unlock(&lock);
 
             pcl::on_nurbs::NurbsDataSurface pca_data;//初始化pca用到的data
             CloudFit::pointCloud2Vector3d (init_cam_cloud, pca_data.interior);//点云数据读入data
@@ -208,21 +221,21 @@ pthread_mutex_unlock(&lock);
             init_flag=0;//初始化完成，设置为0，不再进入该函数
         }
     
-    pcl::on_nurbs::NurbsDataSurface data;//这个用于装填后续点云的数据
-    pcl::on_nurbs::FittingSurface::Parameter params;//设置曲面拟合所需要的参数，使拟合效果更好
-    params.interior_smoothness = 2;
-    params.interior_weight = 1;
-    params.boundary_smoothness = 0.006;
-    params.boundary_weight = 0.5;
-    // params.interior_regularisation = 0;
-    // params.boundary_regularisation = 0;
+        pcl::on_nurbs::NurbsDataSurface data;//这个用于装填后续点云的数据
+        pcl::on_nurbs::FittingSurface::Parameter params;//设置曲面拟合所需要的参数，使拟合效果更好
+        params.interior_smoothness = 2;
+        params.interior_weight = 1;
+        params.boundary_smoothness = 0.006;
+        params.boundary_weight = 0.5;
+        // params.interior_regularisation = 0;
+        // params.boundary_regularisation = 0;
 
-    // params.interior_smoothness = 2;
-    // params.interior_weight = 2;
-    // params.boundary_smoothness = 0;
-    // params.boundary_weight = 10;
+        // params.interior_smoothness = 2;
+        // params.interior_weight = 2;
+        // params.boundary_smoothness = 0;
+        // params.boundary_weight = 10;
 
-pthread_mutex_lock(&lock);
+    pthread_mutex_lock(&lock);
     try/**/
       {   
         listener.lookupTransform("/base"/*目标坐标系*/, "/tool0_controller"/*source_frame*/,\
@@ -242,7 +255,7 @@ pthread_mutex_lock(&lock);
       {
          ROS_ERROR("%s",ex.what());
       }
-pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&lock);
     
     curr2init_mat=par2tool_mat*curr_tool2base_mat*init_tool2base_mat.inverse()*par2tool_mat.inverse();//buxing 
     init2curr_mat=curr2init_mat.inverse();//tool坐标系初始位置到当前位置的变换
@@ -256,9 +269,15 @@ pthread_mutex_unlock(&lock);
       fit.solve (0.5);
     }
     //再添加一下优化拟合的
+//////////////////
 
 //************************计算点
 // /*\测试目标点   
+
+  static double init_secs = ros::Time::now().toSec();
+  cout<<"init_secs: "<<init_secs<<endl;
+  double secs = ros::Time::now().toSec();
+  double timer =secs - init_secs;
    
     /*在这里设定最终的期望点的位置*/
     aim_point_1 = fit.m_nurbs.PointAt(0.5,0);//u==0.5!!!!!!
@@ -270,10 +289,10 @@ pthread_mutex_unlock(&lock);
     aim_in_base_point_1.x = aim_out_point_1[0];
     aim_in_base_point_1.y = aim_out_point_1[1];
     aim_in_base_point_1.z = aim_out_point_1[2];
-    cout<<"aim_in_base_point_1 x:"<<aim_in_base_point_1.x<<endl;
-    cout<<"aim_in_base_point_1 y:"<<aim_in_base_point_1.y<<endl;
-    cout<<"aim_in_base_point_1 z:"<<aim_in_base_point_1.z<<endl;
-
+    // cout<<"aim_in_base_point_1 x:"<<aim_in_base_point_1.x<<endl;
+    // cout<<"aim_in_base_point_1 y:"<<aim_in_base_point_1.y<<endl;
+    // cout<<"aim_in_base_point_1 z:"<<aim_in_base_point_1.z<<endl;
+//////////
     aim_point_2 = fit.m_nurbs.PointAt(0.5,1);
     aim_in_point_2[0] = aim_point_2.x;
     aim_in_point_2[1] = aim_point_2.y;
@@ -283,60 +302,10 @@ pthread_mutex_unlock(&lock);
     aim_in_base_point_2.x = aim_out_point_2[0];
     aim_in_base_point_2.y = aim_out_point_2[1];
     aim_in_base_point_2.z = aim_out_point_2[2];
-    cout<<"aim_in_base_point_2 x:"<<aim_in_base_point_2.x<<endl;
-    cout<<"aim_in_base_point_2 y:"<<aim_in_base_point_2.y<<endl;
-    cout<<"aim_in_base_point_2 z:"<<aim_in_base_point_2.z<<endl;
+    // cout<<"aim_in_base_point_2 x:"<<aim_in_base_point_2.x<<endl;
+    // cout<<"aim_in_base_point_2 y:"<<aim_in_base_point_2.y<<endl;
+    // cout<<"aim_in_base_point_2 z:"<<aim_in_base_point_2.z<<endl;
 
-    double secs = ros::Time::now().toSec();
-    static double init_secs = ros::Time::now().toSec();
-    double timer =secs - init_secs;
-
-    ofstream outFile;
-    /*ios::trunc表示在打开文件前将文件清空,由于是写入,文件不存在则创建*/
-    outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/aim_point_1_20180826.txt",ios::app);
-    // ros::NodeHandle nh;
-    outFile<<timer<<" "<<aim_in_base_point_1.x<<" "<<aim_in_base_point_1.y<<" "<<aim_in_base_point_1.z<<endl;
-    outFile.close();//关闭文件
-
-    /*ios::trunc表示在打开文件前将文件清空,由于是写入,文件不存在则创建*/
-    outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/aim_point_2_20180826.txt",ios::app);
-    // ros::NodeHandle nh;
-    outFile<<timer<<" "<<aim_in_base_point_2.x<<" "<<aim_in_base_point_2.y<<" "<<aim_in_base_point_2.z<<endl;
-    outFile.close();//关闭文件
-    // cout<<"---------"<<endl;
-
-    /*box是最终要到达的位置*/
-    box_point_1.x=0.6032; box_point_1.y=-0.1754; box_point_1.z=-0.032;
-    // box_point_2.x=0.4727; box_point_2.y=-0.1754; box_point_2.z=-0.032;
-    double grap2aim_x = tool_in_base_quan[0] - aim_in_base_point_1.x;
-    double grap2aim_y = tool_in_base_quan[1] - aim_in_base_point_1.y;
-    double grap2aim_z = tool_in_base_quan[2] - aim_in_base_point_1.z - 0.235;
-
-    double grap2aim_point_1_distance = 
-      sqrt(grap2aim_x*grap2aim_x+grap2aim_y*grap2aim_y+grap2aim_z*grap2aim_z);
-
-    cout<<"grap2aim_point_1_distance"<<grap2aim_point_1_distance<<endl;
-    if(aim_in_base_point_2.x>aim_in_base_point_1.x) aim_in_base_point_3=aim_in_base_point_2;
-    else aim_in_base_point_3=aim_in_base_point_1;
-    double aim_x = box_point_1.x - aim_in_base_point_3.x;
-    double aim_y = box_point_1.y - aim_in_base_point_3.y;
-    double aim_z = box_point_1.z - aim_in_base_point_3.z;
-
-    double deform_k = 1;
-    double too_aim_x = exp(deform_k*grap2aim_point_1_distance)*aim_x;
-    double too_aim_y = exp(deform_k*grap2aim_point_1_distance)*aim_y;
-    double too_aim_z = exp(deform_k*grap2aim_point_1_distance)*aim_z;
-
-    ROS_INFO("display:");
-    // cout<<"edge_z"<<edge_z<<endl;
-    cout<<"aim_x:"<<aim_x<<endl;
-    cout<<"aim_y:"<<aim_y<<endl;
-    cout<<"aim_z:"<<aim_z<<endl;
-    cout<<"too_aim_x:"<<too_aim_x<<endl;
-    cout<<"too_aim_y:"<<too_aim_y<<endl;
-    cout<<"too_aim_z:"<<too_aim_z<<endl;
-    // cout<<"---------"<<endl;
-   
     /*位置可以变,姿态不能变*/
     curr_trans[0]=tool_in_base_quan[0];
     curr_trans[1]=tool_in_base_quan[1];
@@ -346,19 +315,60 @@ pthread_mutex_unlock(&lock);
     curr_trans[5]=init_trans[5];
     curr_trans[6]=init_trans[6];
     curr_trans[7]=0.0;
+////
+    ofstream outFile;
+    /*ios::trunc表示在打开文件前将文件清空,由于是写入,文件不存在则创建*/
+    outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/aim_point_1_20180829.txt",ios::app);
+    // ros::NodeHandle nh;
+    outFile<<timer<<" "<<aim_in_base_point_1.x<<" "<<aim_in_base_point_1.y<<" "<<aim_in_base_point_1.z<<" "<<flag_2<<endl;
+    outFile.close();//关闭文件
+
+    outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/aim_point_2_20180829.txt",ios::app);
+    // ros::NodeHandle nh;
+    outFile<<timer<<" "<<aim_in_base_point_2.x<<" "<<aim_in_base_point_2.y<<" "<<aim_in_base_point_2.z<<" "<<flag_2<<endl;
+    outFile.close();//关闭文件
+
+    outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/arm_end_point_20180829.txt",ios::app);
+    // ros::NodeHandle nh;
+    outFile<<timer<<" "<<tool_in_base_quan[0]<<" "<<tool_in_base_quan[1]<<" "<<tool_in_base_quan[2]<<" "<<curr_trans[7]<<" "<<flag_2<<endl;
+    outFile.close();//关闭文件
+    cout<<"---------"<<endl;
+
+////
+    /*box是最终要到达的位置*/
+    box_point_1.x=0.6032; box_point_1.y=-0.1754; box_point_1.z=-0.032;
+    // box_point_2.x=0.4727; box_point_2.y=-0.1754; box_point_2.z=-0.032;
+    
+    if(aim_in_base_point_2.x>aim_in_base_point_1.x) aim_in_base_point_3=aim_in_base_point_2;
+    else aim_in_base_point_3=aim_in_base_point_1;
+
+    cout<<"aim_in_base_point_3 x:"<<aim_in_base_point_3.x<<endl;
+    cout<<"aim_in_base_point_3 y:"<<aim_in_base_point_3.y<<endl;
+    cout<<"aim_in_base_point_3 z:"<<aim_in_base_point_3.z<<endl;
+
+    double grap2paper_pose_x = tool_in_base_quan[0] - aim_in_base_point_3.x;
+    double grap2paper_pose_y = tool_in_base_quan[1] - aim_in_base_point_3.y;
+    double grap2paper_pose_z = tool_in_base_quan[2] - aim_in_base_point_3.z - 0.235;
+
+    double grap2aim_point_3_distance = 
+      sqrt(grap2paper_pose_x*grap2paper_pose_x+grap2paper_pose_y*grap2paper_pose_y+grap2paper_pose_z*grap2paper_pose_z);
+
+    cout<<"grap2aim_point_3_distance"<<grap2aim_point_3_distance<<endl;
+////
 
     /*初始化两种情况,从中选出较低者作为目标*/
     point_0.x=0.4570; point_0.y=0.0675; point_0.z=0.23;//提起来
     point_1.x=0.5358; point_1.y=-0.1030; point_1.z=0.2420;//对准了
     point_2.x=0.5280; point_2.y=-0.3000; point_2.z=0.3240;//移动过去
     point_3.x=0.5280; point_3.y=-0.2900; point_3.z=0.2500;//提起来
-    point_4.x=0.5280; point_4.y=-0.2590; point_4.z=0.2250;//放下去 一推
+    point_4.x=0.5280; point_4.y=-0.2590; point_4.z=0.2300;//放下去 一推
 
     double p0_distance = abs(tool_in_base_quan[2]-point_0.z);
     double p1_distance = abs(tool_in_base_quan[0]-point_1.x);
     double p2_distance = abs(tool_in_base_quan[1]-point_2.y);
     double p3_distance = abs(tool_in_base_quan[2]-point_3.z);
     double p4_distance = abs(tool_in_base_quan[2]-point_4.z)+abs(tool_in_base_quan[1]-point_4.y);
+    double p5_distance = abs(aim_in_base_point_3.x-box_point_1.z)+abs(aim_in_base_point_3.y-box_point_1.y)+abs(aim_in_base_point_3.z-box_point_1.z);
 
     if(flag_2==0)
     {
@@ -387,7 +397,7 @@ pthread_mutex_unlock(&lock);
      if(flag_2==3)
     {
         curr_trans[2]=point_3.z;
-        curr_trans[7]=2;
+        curr_trans[7]=3;
         std::vector<float> p2_array(curr_trans,curr_trans+8);
         move_output_1.data = p2_array;
         if (p3_distance<0.003)flag_2=4;
@@ -396,30 +406,96 @@ pthread_mutex_unlock(&lock);
     {
         curr_trans[1]=point_4.y;
         curr_trans[2]=point_4.z;
-        curr_trans[7]=2;
+        curr_trans[7]=3;
         std::vector<float> p2_array(curr_trans,curr_trans+8);
         move_output_1.data = p2_array;
         if (p4_distance<0.005)flag_2=5;
     }
     if(flag_2==5)
     {
-        curr_trans[0] +=too_aim_x;
-        curr_trans[1] +=too_aim_y;
-        curr_trans[2] +=too_aim_z;
-        curr_trans[7]=0.01;
-        std::vector<float> p2_array(curr_trans,curr_trans+8);
-        move_output_1.data = p2_array;
-    }
-      cout<<"flag_2: "<<flag_2<<endl;
-      pub2_.publish (move_output_1);
+          double curr_interval_time ;
+          double pre_interval_time ;
+          double pub_interval_time ;
+          double paper_pose_x;
+          double paper_pose_y;
+          double paper_pose_z;
+          double paper_delta_x;
+          double paper_delta_y;
+          double paper_delta_z;
+          double deform_k ;
+          double tool_delta_x =0;
+          double tool_delta_y =0;
+          double tool_delta_z =0;
+          double servo_init_time;
 
-    ofstream outFile_2;
-    /*ios::trunc表示在打开文件前将文件清空,由于是写入,文件不存在则创建*/
-    outFile_2.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/arm_end_point_20180826.txt",ios::app);
-    // ros::NodeHandle nh;
-    outFile_2<<timer<<" "<<curr_trans[0]<<" "<<curr_trans[1]<<" "<<curr_trans[2]<<endl;
-    outFile_2.close();//关闭文件
-    cout<<"---------"<<endl;
+      static int peace_flag = 0;
+      if(peace_flag==0)
+      {
+        servo_init_time = timer;
+        pre_interval_time = 0;
+        aim_in_base_point_4 = aim_in_base_point_3;
+        peace_flag = 1;
+      }
+      if(peace_flag==1)
+      {
+          curr_interval_time = timer - servo_init_time; 
+          pub_interval_time = curr_interval_time - pre_interval_time;
+
+          outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/time_20180829.txt",ios::app);
+          outFile<<timer<<" "<<servo_init_time<<" "<<pre_interval_time<<" "<<curr_interval_time<<" "<<flag_2<<endl;
+          outFile.close();//关闭文件
+
+          paper_pose_x=CloudFit::calc3JiTraje(aim_in_base_point_4.x, box_point_1.x,0.2,curr_interval_time);
+          paper_pose_y=CloudFit::calc3JiTraje(aim_in_base_point_4.y, box_point_1.y,0.2,curr_interval_time);
+          paper_pose_z=CloudFit::calc3JiTraje(aim_in_base_point_4.z, box_point_1.z,0.2,curr_interval_time);
+
+          paper_delta_x = paper_pose_x - aim_in_base_point_3.x;
+          paper_delta_y = paper_pose_y - aim_in_base_point_3.y;
+          paper_delta_z = paper_pose_z - aim_in_base_point_3.z;
+
+          deform_k = 0;
+          tool_delta_x = exp(deform_k*grap2aim_point_3_distance)*paper_delta_x;
+          tool_delta_y = exp(deform_k*grap2aim_point_3_distance)*paper_delta_y;
+          tool_delta_z = exp(deform_k*grap2aim_point_3_distance)*paper_delta_z;
+
+           
+          ROS_INFO("display:");
+          // cout<<"edge_z"<<edge_z<<endl;
+          cout<<"paper_delta_x:"<<paper_delta_x<<endl;
+          cout<<"paper_delta_y:"<<paper_delta_y<<endl;
+          cout<<"paper_delta_z:"<<paper_delta_z<<endl;
+          cout<<"tool_delta_x:"<<tool_delta_x<<endl;
+          cout<<"tool_delta_y:"<<tool_delta_y<<endl;
+          cout<<"tool_delta_z:"<<tool_delta_z<<endl;
+          // cout<<"---------"<<endl;
+
+          curr_trans[0] = tool_in_base_quan[0]+tool_delta_x;
+          curr_trans[1] = tool_in_base_quan[1]+tool_delta_y;
+          curr_trans[2] = tool_in_base_quan[2]+tool_delta_z;
+          pre_interval_time = curr_interval_time;
+          if(curr_interval_time>=5)
+          move_output_1.data = 0;
+          cout<<"curr_interval_time"<<curr_interval_time<<endl;
+          curr_trans[7]=pub_interval_time;
+          std::vector<float> p2_array(curr_trans,curr_trans+8);
+          move_output_1.data = p2_array;
+          // if(p5_distance < 0.006)flag_2=6;
+      };
+    }
+    // if(flag_2==6)
+    // {
+    //   curr_trans[0]=tool_in_base_quan[0];
+    //   curr_trans[1]=tool_in_base_quan[1];
+    //   curr_trans[2]=tool_in_base_quan[2];
+    //   curr_trans[3]=init_trans[3];
+    //   curr_trans[4]=init_trans[4];
+    //   curr_trans[5]=init_trans[5];
+    //   curr_trans[6]=init_trans[6];
+    //   curr_trans[7]=1;
+    // }
+    cout<<"flag_2: "<<flag_2<<endl;
+    pub2_.publish (move_output_1);
+ 
 
 //******这些部分是用来采点拟合的
      double u=0.0;

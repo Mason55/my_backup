@@ -52,7 +52,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
     //conremo.setCondition (color_cond);
 
     outrem.setRadiusSearch(0.04);//这是我的相机视角 的滤波
-    outrem.setMinNeighborsInRadius (170);
+    outrem.setMinNeighborsInRadius (180);
 
     // outrem.setRadiusSearch(0.3);//添加uniform的滤波
     // outrem.setMinNeighborsInRadius (220);
