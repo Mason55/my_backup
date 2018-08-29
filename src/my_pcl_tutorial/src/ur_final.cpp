@@ -266,7 +266,7 @@ public:
     for (unsigned i = 0; i < iterations_fit; ++i)//优化拟合的效果
     {
       fit.assemble (params);
-      fit.solve (0.5);
+      fit.solve (0.55);
     }
     //再添加一下优化拟合的
 //////////////////
@@ -336,7 +336,7 @@ public:
 
 ////
     /*box是最终要到达的位置*/
-    box_point_1.x=0.6032; box_point_1.y=-0.1754; box_point_1.z=-0.032;
+    box_point_1.x=0.6032; box_point_1.y=-0.1754; box_point_1.z=-0.03;
     // box_point_2.x=0.4727; box_point_2.y=-0.1754; box_point_2.z=-0.032;
     
     if(aim_in_base_point_2.x>aim_in_base_point_1.x) aim_in_base_point_3=aim_in_base_point_2;
@@ -359,9 +359,9 @@ public:
     /*初始化两种情况,从中选出较低者作为目标*/
     point_0.x=0.4570; point_0.y=0.0675; point_0.z=0.23;//提起来
     point_1.x=0.5358; point_1.y=-0.1030; point_1.z=0.2420;//对准了
-    point_2.x=0.5280; point_2.y=-0.3000; point_2.z=0.3240;//移动过去
-    point_3.x=0.5280; point_3.y=-0.2900; point_3.z=0.2500;//提起来
-    point_4.x=0.5280; point_4.y=-0.2590; point_4.z=0.2300;//放下去 一推
+    point_2.x=0.5180; point_2.y=-0.3000; point_2.z=0.3240;//移动过去
+    point_3.x=0.5180; point_3.y=-0.2900; point_3.z=0.2500;//提起来
+    point_4.x=0.5180; point_4.y=-0.2590; point_4.z=0.2300;//放下去 一推
 
     double p0_distance = abs(tool_in_base_quan[2]-point_0.z);
     double p1_distance = abs(tool_in_base_quan[0]-point_1.x);
@@ -413,8 +413,8 @@ public:
     }
     if(flag_2==5)
     {
-          double curr_interval_time ;
-          double pre_interval_time ;
+          double servo_curr_time ;
+          double servo_pre_time ;
           double pub_interval_time ;
           double paper_pose_x;
           double paper_pose_y;
@@ -432,28 +432,28 @@ public:
       if(peace_flag==0)
       {
         servo_init_time = timer;
-        pre_interval_time = 0;
+        servo_pre_time = 0;
         aim_in_base_point_4 = aim_in_base_point_3;
         peace_flag = 1;
       }
       if(peace_flag==1)
       {
-          curr_interval_time = timer - servo_init_time; 
-          pub_interval_time = curr_interval_time - pre_interval_time;
+          servo_curr_time = timer - servo_init_time; 
+          pub_interval_time = servo_curr_time - servo_pre_time;
 
           outFile.open("/home/mason/catkin_ws/data/TraOfRobotAndAim/time_20180829.txt",ios::app);
-          outFile<<timer<<" "<<servo_init_time<<" "<<pre_interval_time<<" "<<curr_interval_time<<" "<<flag_2<<endl;
+          outFile<<timer<<" "<<servo_init_time<<" "<<servo_pre_time<<" "<<servo_curr_time<<" "<<flag_2<<endl;
           outFile.close();//关闭文件
 
-          paper_pose_x=CloudFit::calc3JiTraje(aim_in_base_point_4.x, box_point_1.x,0.2,curr_interval_time);
-          paper_pose_y=CloudFit::calc3JiTraje(aim_in_base_point_4.y, box_point_1.y,0.2,curr_interval_time);
-          paper_pose_z=CloudFit::calc3JiTraje(aim_in_base_point_4.z, box_point_1.z,0.2,curr_interval_time);
+          paper_pose_x=CloudFit::calc3JiTraje(aim_in_base_point_4.x, box_point_1.x,0.2,servo_curr_time);
+          paper_pose_y=CloudFit::calc3JiTraje(aim_in_base_point_4.y, box_point_1.y,0.2,servo_curr_time);
+          paper_pose_z=CloudFit::calc3JiTraje(aim_in_base_point_4.z, box_point_1.z,0.2,servo_curr_time);
 
           paper_delta_x = paper_pose_x - aim_in_base_point_3.x;
           paper_delta_y = paper_pose_y - aim_in_base_point_3.y;
           paper_delta_z = paper_pose_z - aim_in_base_point_3.z;
 
-          deform_k = 0;
+          deform_k = 1.4;
           tool_delta_x = exp(deform_k*grap2aim_point_3_distance)*paper_delta_x;
           tool_delta_y = exp(deform_k*grap2aim_point_3_distance)*paper_delta_y;
           tool_delta_z = exp(deform_k*grap2aim_point_3_distance)*paper_delta_z;
@@ -472,27 +472,29 @@ public:
           curr_trans[0] = tool_in_base_quan[0]+tool_delta_x;
           curr_trans[1] = tool_in_base_quan[1]+tool_delta_y;
           curr_trans[2] = tool_in_base_quan[2]+tool_delta_z;
-          pre_interval_time = curr_interval_time;
-          if(curr_interval_time>=5)
-          move_output_1.data = 0;
-          cout<<"curr_interval_time"<<curr_interval_time<<endl;
+          servo_pre_time = servo_curr_time;
+          cout<<"servo_curr_time"<<servo_curr_time<<endl;
+          if(servo_curr_time>=5)
+          {
+               flag_2=6;
+          }
           curr_trans[7]=pub_interval_time;
           std::vector<float> p2_array(curr_trans,curr_trans+8);
           move_output_1.data = p2_array;
           // if(p5_distance < 0.006)flag_2=6;
       };
     }
-    // if(flag_2==6)
-    // {
-    //   curr_trans[0]=tool_in_base_quan[0];
-    //   curr_trans[1]=tool_in_base_quan[1];
-    //   curr_trans[2]=tool_in_base_quan[2];
-    //   curr_trans[3]=init_trans[3];
-    //   curr_trans[4]=init_trans[4];
-    //   curr_trans[5]=init_trans[5];
-    //   curr_trans[6]=init_trans[6];
-    //   curr_trans[7]=1;
-    // }
+    if(flag_2==6)
+    {
+      curr_trans[0]=tool_in_base_quan[0];
+      curr_trans[1]=tool_in_base_quan[1];
+      curr_trans[2]=tool_in_base_quan[2];
+      curr_trans[3]=init_trans[3];
+      curr_trans[4]=init_trans[4];
+      curr_trans[5]=init_trans[5];
+      curr_trans[6]=init_trans[6];
+      curr_trans[7]=0.01;
+    }
     cout<<"flag_2: "<<flag_2<<endl;
     pub2_.publish (move_output_1);
  
